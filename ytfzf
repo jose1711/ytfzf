@@ -208,8 +208,9 @@ command_exists "external_menu" || external_menu () {
 }
 
 command_exists "search_prompt_menu" || search_prompt_menu () {
-	printf "Search\n>"
-	read -r _search
+	printf "Search\n"
+	read -p'>' -er _search
+	history -s "$_search"
 	printf "\033[1A\033[K\r%s\n" "> $_search"
 }
 command_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
