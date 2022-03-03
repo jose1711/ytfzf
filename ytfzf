@@ -4,6 +4,16 @@
 #major.minor.bugs
 YTFZF_VERSION="git-1372.d1a839a"
 
+# setup l10n
+if [ -f /usr/bin/gettext.sh ]; then
+	. /usr/bin/gettext.sh
+	export TEXTDOMAIN=ytfzf
+	export TEXTDOMAINDIR=/usr/share/locale
+else
+	eval_gettext() { eval "echo -n \"$@\""; }
+	gettext() { printf "$@"; }
+fi
+
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
@@ -567,7 +577,7 @@ scrape_subscriptions () {
 scrape_youtube_channel () {
 	channel_url="$1"
 	output_json_file="$2"
-	print_info "Scraping Youtube channel: $channel_url\n"
+	print_info $(eval_gettext "Scraping Youtube channel: \$channel_url"; echo)
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
@@ -738,7 +748,8 @@ scrape_invidious_playlist () {
 		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
 		-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
 		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
-		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
+		unset IFS
+		print_info "`eval_gettext \"Scraping Youtube playlist (with \\\$invidious_instance) (playlist: \\\$playlist_url, pg: \\\$_cur_page)\"; echo \"\n\"`"
 
 		_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
 		_cur_page=$((_cur_page+1))
@@ -760,8 +771,8 @@ scrape_invidious_search () {
 	while [ ${_cur_page} -le $page_num ]; do
 		{
 			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
-
-			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
+			unset IFS
+			print_info "`eval_gettext \"Scraping YouTube (with \\\$invidious_instance) (\\\$page_query, pg: \\\$_cur_page)\"; echo \"\n\"`"
 
 			_get_request "$invidious_instance/api/v1/search" \
 				-G --data-urlencode "q=$page_query" \
@@ -860,7 +871,7 @@ scrape_invidious_channel () {
 scrape_peertube () {
 	page_query=$1
 	output_json_file=$2
-	print_info "Scraping Peertube ($page_query)\n"
+	print_info "`eval_gettext \"Scraping Peertube (\\\$page_query)\"; echo \"\n\"`"
 
 	_tmp_json="${session_temp_dir}/peertube.json"
 
@@ -982,7 +993,7 @@ scrape_comments () {
 	_comment_file="${session_temp_dir}/comments-$video_id.tmp.json"
 	i=1
 	while [ "$i" -le $page_count ]; do
-		print_info "Scraping comments (pg: $i)\n"
+	    print_info "`eval_gettext \"Scraping comments (pg: \\$i)\"; echo \"\n\"`"
 		_out_comment_file="${session_temp_dir}/comments-$i.json.final"
 		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
 			--data-urlencode "continuation=$continuation" > "$_comment_file"
@@ -1869,7 +1880,7 @@ handle_scraping (){
 
 #check if nothing was scraped{{{
 handle_empty_scrape () {
-	[ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
+	[ ! -s "$ytfzf_video_json_file" ] && die 4 `gettext "Nothing was scraped"; echo "\n"`
 
 	#sometimes the file fils up with empty arrays, we have to check if that's the case
 	something_was_scraped=0
@@ -1879,7 +1890,7 @@ handle_empty_scrape () {
 		#we can break if something was scraped, otherwise we are wasting time in the loop
 		break
 	done < "$ytfzf_video_json_file"
-	[ $something_was_scraped -eq 0 ] && die 4 "Nothing was scraped\n"
+	[ $something_was_scraped -eq 0 ] && die 4 `gettext "Nothing was scraped"; echo "\n"`
 }
 #}}}
 
